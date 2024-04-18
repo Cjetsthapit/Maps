@@ -41,7 +41,7 @@ struct AddDestinationView: View {
                 Section(header: Text("Details")) {
                     FormRow(iconName: "mappin.and.ellipse", placeholder: "Location", text: $address)
                     FormRow(iconName: "text.justify", placeholder: "Description", text: $description)
-                  
+                    
                 }
                 Group {
                     if let image = state.image {
@@ -115,10 +115,18 @@ struct AddDestinationView: View {
                 name: self.address,
                 description: self.description,
                 coordinate: location.coordinate,
-                image: state.image
+                images: [state.image].compactMap { $0 } // Fix here
             )
             
-            self.destinations.append(newDestination)
+            if let existingIndex = destinations.firstIndex(where: { $0.name == address }) {
+                // Update existing destination
+                destinations[existingIndex].description = description
+                destinations[existingIndex].images.append(contentsOf: [state.image].compactMap { $0 }) // Fix here
+            } else {
+                // Add new destination
+                self.destinations.append(newDestination)
+            }
+            
             self.presentationMode.wrappedValue.dismiss()
         }
     }

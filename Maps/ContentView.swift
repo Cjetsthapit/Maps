@@ -62,8 +62,8 @@ struct DestinationDetail: View {
         NavigationView {
             ScrollView {
                 VStack {
-                    if let image = destination.image {
-                        image
+                    ForEach(destination.images.indices, id: \.self) { index in
+                        destination.images[index]
                             .resizable()
                             .scaledToFit()
                             .frame(maxWidth: .infinity)
@@ -88,4 +88,3 @@ struct DestinationDetail: View {
         }
     }
 }
-

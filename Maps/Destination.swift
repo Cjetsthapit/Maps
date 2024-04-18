@@ -7,6 +7,5 @@ struct Destination: Identifiable {
     var name: String
     var description: String
     var coordinate: CLLocationCoordinate2D
-    var image: Image?
-
+    var images: [Image]
 }
