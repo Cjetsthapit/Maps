@@ -48,26 +48,40 @@ struct ContentView: View {
                 AddDestinationView(destinations: $destinations)
             }
             .sheet(item: $selectedDestination) { destination in
-                DestinationDetail(destination: destination)
+                if let index = destinations.firstIndex(where: { $0.id == destination.id }) {
+                    DestinationDetail(destination: $destinations[index])
+                }
             }
+
         }
     }
 }
 
 struct DestinationDetail: View {
     @Environment(\.presentationMode) var presentationMode
-    var destination: Destination
+    @Binding var destination: Destination // Use @Binding here
+    @State private var showAlert = false
+    @State private var deleteIndex: Int?
     
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack {
                     ForEach(destination.images.indices, id: \.self) { index in
-                        destination.images[index]
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity)
-                            .padding()
+                        VStack {
+                            destination.images[index]
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            Button(action: {
+                                self.showAlert = true
+                                self.deleteIndex = index
+                            }) {
+                                Text("Delete")
+                                    .foregroundColor(.red)
+                            }
+                        }
                     }
                     Text(destination.description)
                         .padding()
@@ -85,6 +99,14 @@ struct DestinationDetail: View {
                     }
                 }
             }
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Delete Image"), message: Text("Are you sure you want to delete this image?"), primaryButton: .destructive(Text("Delete")) {
+                    if let deleteIndex = deleteIndex {
+                        destination.images.remove(at: deleteIndex)
+                    }
+                }, secondaryButton: .cancel())
+            }
         }
     }
 }
+
