@@ -59,45 +59,66 @@ struct ContentView: View {
 
 struct DestinationDetail: View {
     @Environment(\.presentationMode) var presentationMode
-    @Binding var destination: Destination // Use @Binding here
+    @Binding var destination: Destination
     @State private var showAlert = false
     @State private var deleteIndex: Int?
+
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack {
-                    ForEach(destination.images.indices, id: \.self) { index in
-                        VStack {
-                            destination.images[index]
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                            Button(action: {
-                                self.showAlert = true
-                                self.deleteIndex = index
-                            }) {
-                                Text("Delete")
-                                    .foregroundColor(.red)
+                VStack(alignment: .leading) {
+                    Text(destination.description)
+                        .font(.subheadline)
+                        .fontWeight(.regular)
+                        .padding()
+                    
+                    Text("Travel Photos")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .padding()
+                    
+                    if destination.images.isEmpty {
+                        Text("No Photos")
+                            .foregroundColor(.secondary)
+                            .padding()
+                    } else {
+                        ForEach(destination.images.indices, id: \.self) { index in
+                            ZStack(alignment: .topTrailing) {
+                                destination.images[index]
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: .infinity)
+                                    .cornerRadius(10)
+                                    .padding()
+                                
+                                    
+                                if destination.images.count > 1 {
+                                    Button(action: {
+                                        self.showAlert = true
+                                        self.deleteIndex = index
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.red)
+                                            .padding(10)
+                                            .background(Color.white.opacity(0.6))
+                                            .clipShape(Circle())
+                                    }
+                                    .padding(.trailing, 10)
+                                    .padding(.top, 10)
+                                }
                             }
                         }
                     }
-                    Text(destination.description)
-                        .padding()
+                    
+                  
                 }
-                .navigationTitle(destination.name)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button(action: {
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Label("Dismiss", systemImage: "arrow.down")
-                                .labelStyle(.titleAndIcon)
-                        }
-                    }
-                }
+                .navigationBarTitle(destination.name)
+                .navigationBarItems(leading: Button("Dismiss") {
+                    presentationMode.wrappedValue.dismiss()
+                })
+
+               
             }
             .alert(isPresented: $showAlert) {
                 Alert(title: Text("Delete Image"), message: Text("Are you sure you want to delete this image?"), primaryButton: .destructive(Text("Delete")) {
@@ -109,4 +130,3 @@ struct DestinationDetail: View {
         }
     }
 }
-

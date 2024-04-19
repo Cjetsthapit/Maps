@@ -6,21 +6,25 @@ import PhotosUI
 class PhotosState: ObservableObject {
     @Published var photoItem: PhotosPickerItem? {
         didSet {
-            print("Photo Selected \(String(describing: photoItem))")
+            print("Photo Selected \(photoItem.debugDescription)")
             photoItem?.loadTransferable(type: Image.self) { result in
                 DispatchQueue.main.async {
                     switch result {
                         case .failure(let error):
                             print(error.localizedDescription)
                         case .success(let image):
-                                self.image = image
+                            if let image = image {
+                                self.images.append(image)
+                            }
                     }
                 }
             }
+            print(images.last ?? "No images")
         }
     }
     
-    @Published var image: Image?
+    @Published var images: [Image] = []
+   
 }
 
 struct AddDestinationView: View {
@@ -41,35 +45,32 @@ struct AddDestinationView: View {
                 Section(header: Text("Details")) {
                     FormRow(iconName: "mappin.and.ellipse", placeholder: "Location", text: $address)
                     FormRow(iconName: "text.justify", placeholder: "Description", text: $description)
-                    
-                }
-                Group {
-                    if let image = state.image {
-                        image
+                    Button(action: {
+                        presentPhotos = true
+                    }) {
+                        Rectangle()
+                            .fill(Color.gray)
+                            .frame(height: 100)
+                            .overlay(
+                                VStack {
+                                    Image(systemName: "plus.circle")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 24))
+                                    Text("Add Photo")
+                                        .foregroundColor(.white)
+                                        .bold()
+                                }
+                            )
+                            .cornerRadius(10)
+                    }
+                    ForEach(state.images.indices, id: \.self) { index in
+                        state.images[index]
                             .resizable()
                             .scaledToFit()
                             .frame(height: 300)
                             .cornerRadius(10)
-                    } else {
-                        Button {
-                            presentPhotos.toggle()
-                        } label: {
-                            Rectangle()
-                                .fill(Color.gray)
-                                .frame(height: 300)
-                                .overlay(
-                                    VStack {
-                                        Image(systemName: "plus.circle")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 24))
-                                        Text("Get Photo")
-                                            .foregroundColor(.white)
-                                            .bold()
-                                    }
-                                )
-                        }
-                        .cornerRadius(10)
                     }
+                 
                 }
             }
             .photosPicker(isPresented: $presentPhotos, selection: $state.photoItem, matching: .images, preferredItemEncoding: .compatible)
@@ -93,9 +94,9 @@ struct AddDestinationView: View {
     }
     
     private func validateAndAddDestination() {
-        guard !address.isEmpty, !description.isEmpty, state.image != nil else {
-            self.errorMessage = "All fields must be filled, and a photo must be selected."
-            self.showAlert = true
+        guard !address.isEmpty, !description.isEmpty, !state.images.isEmpty else {
+            errorMessage = "All fields must be filled, and at least one photo must be selected."
+            showAlert = true
             return
         }
         
@@ -106,8 +107,8 @@ struct AddDestinationView: View {
         let geocoder = CLGeocoder()
         geocoder.geocodeAddressString(address) { placemarks, error in
             guard let placemark = placemarks?.first, let location = placemark.location else {
-                self.errorMessage = "Address not found."
-                self.showAlert = true
+                errorMessage = "Address not found."
+                showAlert = true
                 return
             }
             
@@ -115,19 +116,11 @@ struct AddDestinationView: View {
                 name: self.address,
                 description: self.description,
                 coordinate: location.coordinate,
-                images: [state.image].compactMap { $0 } // Fix here
+                images: self.state.images
             )
             
-            if let existingIndex = destinations.firstIndex(where: { $0.name == address }) {
-                // Update existing destination
-                destinations[existingIndex].description = description
-                destinations[existingIndex].images.append(contentsOf: [state.image].compactMap { $0 }) // Fix here
-            } else {
-                // Add new destination
-                self.destinations.append(newDestination)
-            }
-            
-            self.presentationMode.wrappedValue.dismiss()
+            destinations.append(newDestination)
+            presentationMode.wrappedValue.dismiss()
         }
     }
 }
